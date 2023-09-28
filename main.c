@@ -117,13 +117,10 @@ int main(void)
 	HAL_GPIO_TogglePin(GPIOB, LED7_Pin);
 
 	// ADC to LCD; TODO: Read POT1 value and write to LCD
-	// Poll the ADC for the potentiometer value
-//			lcd_command(CLEAR);
-			adc_val = pollADC();
-			char adc_string[16];
-			sprintf(adc_string, "ADC read: %u", adc_val);
-	        // Write the ADC value to the LCD
-	        writeLCD(adc_string);
+	adc_val = pollADC();
+	char adc_chars[20];
+	sprintf(adc_chars, "ADC read: %u", adc_val);
+	writeLCD(adc_chars);
 
 	// Update PWM value; TODO: Get CRR
 	  CCR = ADCtoCCR(adc_val);
@@ -353,54 +350,52 @@ void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Add code to switch LED7 delay frequency
 	curr_millis = HAL_GetTick();
-//	if((!(LL_GPIO_ReadInputPort(Button0_GPIO_Port) & Button0_Pin))&&(curr_millis-prev_millis>=500)) //check button
+
 	if(curr_millis-prev_millis>=500)
 	{
-	        // Clear the EXTI line pending bit
-
-
 		/* ALTERNATE DELAY IN ARRAY */
 		temp = delays[0];
 		delays[0] = delays[1];
 		delays[1] = temp;
 
-	        // Toggle LED frequency
-	        delay_t = delays[0];
-	        
-	        prev_millis = curr_millis;
-	    }
+	    // Swap LED frequency use first element in array of delays.
+	    delay_t = delays[0];    
+	    prev_millis = curr_millis;
+	}
   
-	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
+	HAL_GPIO_EXTI_IRQHandler(Button0_Pin);
 }
 
 // TODO: Complete the writeLCD function
 void writeLCD(char *char_in){
-    delay(3000);
+	// add a delay to extend time from potentiomer reads then to LCD 
+    delay(2500);
+    // remove what is currently on LCD
 	lcd_command(CLEAR);
-
-
-	// Write the string to the LCD
+	// write current readings to LCD
 	lcd_putstring(char_in);
 
 }
 
 // Get ADC value
 uint32_t pollADC(void){
-  // TODO: Complete function body to get ADC val
-		HAL_ADC_Start(&hadc);
-	    // Read the ADC value
-	    uint32_t val = HAL_ADC_GetValue(&hadc);
-	    HAL_ADC_Stop(&hadc);
+	// TODO: Complete function body to get ADC val
 
+	// initialize the sampling and resolution configurations
+	HAL_ADC_Start(&hadc);
+	// Read the ADC value of the analog conversion
+	uint32_t val = HAL_ADC_GetValue(&hadc);
+	// stop sampling
+	HAL_ADC_Stop(&hadc);
 
 	return val;
 }
 
 // Calculate PWM CCR value
 uint32_t ADCtoCCR(uint32_t adc_val){
-  // TODO: Calculate CCR val using an appropriate equation
-	uint32_t ccr_value = (adc_val * (47999)) / 4096;
-	return ccr_value;
+	// TODO: Calculate CCR val using an appropriate equation
+	uint32_t val = (adc_val * (47999)) / 4096;
+	return val;
 }
 
 void ADC1_COMP_IRQHandler(void)
